@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
@@ -20,37 +21,42 @@ const Chat = () => {
   const [chatList, setChatList] = useState<any[] | undefined>([]);
 
   // 실시간으로 데이터 가져오기
-  // useEffect(() => {
-  //   onSnapshot(doc(db, 'messages', 'room_uuid'), (doc) => {
-  //     // const source = doc.metadata.hasPendingWrites ? 'Local' : 'Server';
-  //     const trans = objTransArr(doc.data(), 'user_uuid');
-  //     setChatList(trans);
-  //   });
-  // }, []);
-
-  // room_uuid의 채팅 데이터 가져오기
   useEffect(() => {
-    const getMessage = async () => {
-      // const q = query(collection(db, '-NhjsZ_lKhVCASCHgxoc'));
-      // 데이터 정렬
-      const chatRoomCollectionRef = collection(db, '-NhjsZ_lKhVCASCHgxoc');
-      const sortedQuery = query(
-        chatRoomCollectionRef,
-        orderBy('createAt', 'desc')
-      );
-      const querySnapshot = await getDocs(sortedQuery);
-
-      console.log(querySnapshot.docs);
-
-      querySnapshot.docs.map((doc) => console.log(doc.data()));
+    const chatRef = collection(db, 'chat', '-random_uuid', '-user_uuid');
+    const sortedQuery = query(chatRef, orderBy('createAt', 'asc'));
+    onSnapshot(sortedQuery, (querySnapshot) => {
       // querySnapshot.forEach((doc) => {
       //   console.log(doc.data());
       // });
-      // const chatRef = doc(db, 'messages', 'room_uuid');
-      // const docSnap = await getDoc(chatRef);
-      // if (!docSnap.data()) return;
-      // const trans = objTransArr(docSnap.data(), 'user_uuid');
-      // setChatList(trans);
+      let chatList: any = [];
+      chatList = querySnapshot.docs.map((doc) => {
+        return { ...doc.data(), chat_uuid: doc.id };
+      });
+      setChatList(chatList);
+    });
+
+    // onSnapshot(doc(db, 'chat', '-random_uuid'), (doc) => {
+    //   const source = doc.metadata.hasPendingWrites ? 'Local' : 'Server';
+    //   // const trans = objTransArr(doc.data(), 'user_uuid');
+    //   // setChatList(trans);
+    //   console.log(doc.data());
+    // });
+    // const q = query(collection(db, '-room_uuid'));
+  }, []);
+
+  // -room_uuid의 채팅 데이터 가져오기
+  useEffect(() => {
+    const getMessage = async () => {
+      const chatRef = collection(db, 'chat', '-random_uuid', '-user_uuid');
+      const sortedQuery = query(chatRef, orderBy('createAt', 'asc'));
+      const querySnapshot = await getDocs(sortedQuery);
+
+      let chatList: any = [];
+      chatList = querySnapshot.docs.map((doc) => {
+        return { ...doc.data(), chat_uuid: doc.id };
+      });
+
+      setChatList(chatList);
     };
 
     getMessage();
@@ -58,27 +64,26 @@ const Chat = () => {
 
   // 데이터 추가
   const chatPush = async () => {
-    // const chatRef = doc(db, 'messages', 'room_uuid2');
-    const chatRef = doc(db, '-NhjsZ_lKhVCASCHgxoc', '-NhjsZ_random333');
-    setDoc(
-      chatRef,
+    const chatRef = await addDoc(
+      collection(db, 'chat', '-random_uuid', '-user_uuid'),
       {
-        text: 'testtest',
-        nickName: 'test4444',
+        user_uuid: '1',
+        text: 'hihiihihihi',
+        nickName: 'test합니다',
         createAt: new Date(),
         image: 'URL',
-      },
-      { merge: true }
+      }
     );
 
-    alert('보냄');
+    alert(chatRef.id);
   };
 
   return (
     <div className={styles.main}>
       <h2>chat</h2>
       <ul className={styles.chatBodySection}>
-        {chatList && chatList.map((item, index) => <ChatCard chat={item} />)}
+        {chatList &&
+          chatList.map((item) => <ChatCard key={item.chat_uuid} chat={item} />)}
       </ul>
       <section className={styles.chatInputSection}>
         <input
